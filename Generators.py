@@ -149,6 +149,46 @@ def bmove_generator(batch_size = 64, frames = 5, bounceAt = None):
 
         yield a
 
+# ## Mirroring
+
+def mirror_generator(batch_size = 64, frames = 5, bounceAt = None):
+    """
+    Mirroring generator. Yields x, x_vel, y, y_vel with given number of frames. Then Yields same but mirrored against border.
+    bounceAt=None will create the bounce at some random frame. Otherwise the bounce happens
+    after the n-th frame (bounceAt = 3 means that the 4th frame is after the bounce)
+    """
+    while True:
+        a = np.zeros((batch_size, frames, 4))
+        b = np.zeros((batch_size, frames, 4))
+        #y
+        y_vel = np.random.uniform(-0.05, 0.05, size=batch_size)
+        a[:,:,2] = np.arange(frames)* y_vel.reshape(-1,1) + np.random.uniform(0.25,0.75) #no bounces here
+        k = int(np.random.rand()*(frames-2)) if bounceAt == None else bounceAt
+        a[:,:,3] = y_vel.reshape(-1,1)
+
+        #x
+        border = np.random.choice([0,1])
+        x_vel = -np.random.uniform(0, 0.1, size=batch_size)
+
+        if border == 1: x_vel = -x_vel
+        delta = np.random.uniform(0, np.abs(x_vel))
+        delta2 = np.abs(x_vel) - delta#np.abs(x_vel - delta)
+        if border == 1: 
+            delta = 1-delta
+            delta2 = 1-delta2
+        a[:,:k+1,1] = x_vel.reshape(-1,1)
+        
+        a[:,k+1:,1] = -x_vel.reshape(-1,1)
+
+        for i in range(k+1):
+            a[:,k-i,0] = delta - i * x_vel
+        b = np.copy(a)
+        for i in range(frames-k-1):
+            a[:,k+i+1,0] = delta2 - i * x_vel
+            b[:,k+i+1,0] = delta + (i+1) *x_vel
+
+        yield b,a 
+        
 
 # In[9]:
 
