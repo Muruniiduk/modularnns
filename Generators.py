@@ -331,3 +331,30 @@ def bounce2_move_generator(batch_size = 64, frames = 5, bounceAt = None):
 #     print(a)
 #     break
 
+def pv_wb_generator(batch_size = 64):
+    """Generator for bounce. Border 0 or 1 is chosen randomly for the whole batch.
+    Yields: in coordinate and speed, output is time p (1 frame is 1) to bounce and new speed vp.
+    """
+    while True:
+        xv = np.zeros((batch_size, 2))
+        pvb = np.zeros((batch_size, 3))
+        speeds = np.random.uniform(0,0.1,size=batch_size)
+        if np.random.rand() > 0.5:
+            #starting coordinate
+            x = 1-np.random.uniform(0, 2*speeds) #mby there isn't a bounce
+            #p = 0.5v kui pool maad liikuda, p=1 kui ei puuduta seina
+            p = np.minimum((1-x)/speeds, 1)
+            pvb[:,2] = 1
+        else:
+            x = np.random.uniform(0, 2*speeds)
+            p = np.minimum(x/speeds, 1)
+            speeds *= -1
+            pvb[:,2] = 0
+        indeces = np.argwhere(p!=1)
+        vp = np.copy(speeds)
+        vp[indeces] *= (-1)
+        xv[:,0] = x
+        xv[:,1] = speeds
+        pvb[:,0] = p
+        pvb[:,1] = vp
+        yield xv, pvb
